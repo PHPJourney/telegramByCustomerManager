@@ -27,10 +27,14 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
     const apiId = Number(process.env.TELEGRAM_API_ID)
     const apiHash = process.env.TELEGRAM_API_HASH
 
+    logger.info(`Attempting to send code to ${phoneNumber}`)
+    logger.info(`API ID configured: ${!!apiId}, API Hash configured: ${!!apiHash}`)
+
     if (!apiId || !apiHash) {
+      logger.error('Telegram API credentials not configured')
       return res.status(500).json({
         success: false,
-        message: '服务器配置错误',
+        message: '服务器配置错误：缺少 Telegram API 凭证',
       })
     }
 
@@ -59,9 +63,28 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
     })
   } catch (error: any) {
     logger.error('Send verification code error:', error)
+    logger.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    })
+    
+    // 更友好的错误消息
+    let errorMessage = '发送验证码失败'
+    
+    if (error.message?.includes('connection')) {
+      errorMessage = '无法连接到 Telegram 服务器，请检查网络连接或代理配置'
+    } else if (error.message?.includes('PHONE_NUMBER_INVALID')) {
+      errorMessage = '手机号格式不正确，请使用国际格式（如 +8613800138000）'
+    } else if (error.message?.includes('FLOOD_WAIT')) {
+      errorMessage = '请求过于频繁，请稍后再试'
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
     res.status(500).json({
       success: false,
-      message: error.message || '发送验证码失败',
+      message: errorMessage,
     })
   }
 }
