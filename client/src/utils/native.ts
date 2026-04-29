@@ -47,7 +47,7 @@ export class NativeService {
 
       // 监听返回按钮（Android）
       if (this.getPlatform() === 'android') {
-        App.addListener('backButton', ({ canGoBack }) => {
+        App.addListener('backButton', ({ canGoBack }: { canGoBack: boolean }) => {
           if (!canGoBack) {
             // 退出应用或显示确认对话框
             App.exitApp()

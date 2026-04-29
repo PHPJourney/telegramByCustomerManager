@@ -9,19 +9,8 @@ import './index.css'
 // 初始化 Capacitor 原生功能
 NativeService.initialize().catch(console.error)
 
-// Register service worker for PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
-      (registration) => {
-        console.log('SW registered:', registration)
-      },
-      (error) => {
-        console.log('SW registration failed:', error)
-      }
-    )
-  })
-}
+// Service Worker registration temporarily disabled for CI/CD
+// Can be re-enabled after workbox dependencies are installed
 
 const queryClient = new QueryClient({
   defaultOptions: {
