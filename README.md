@@ -12,7 +12,7 @@
 
 一个基于 React + Node.js 的电报客服系统，支持多客服分发、Web3 钱包集成、AI 消息辅助和多语言切换。
 
-[快速开始](./QUICKSTART.md) • [安装指南](./INSTALL.md) • [架构文档](./ARCHITECTURE.md) • [项目进度](./PROJECT_STATUS.md)
+[快速开始](./QUICKSTART.md) • [安装指南](./INSTALL.md) • [架构文档](./ARCHITECTURE.md) • [项目进度](./PROJECT_STATUS.md) • [多端打包](./MOBILE_BUILD_GUIDE.md)
 
 </div>
 
@@ -28,6 +28,7 @@
 - ✅ **多语言支持** - i18n 国际化
 - ✅ **实时通信** - WebSocket 实时消息推送
 - ✅ **响应式设计** - PC 和移动端完美适配
+- ✅ **多端支持** - Web、Android APK、iOS App、桌面应用
 
 ## 技术栈
 
