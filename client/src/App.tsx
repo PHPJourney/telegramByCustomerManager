@@ -1,11 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore } from './stores/authStore'
-
-// Pages (will be created)
-// import Login from './pages/auth/Login'
-// import Register from './pages/auth/Register'
-// import Dashboard from './pages/dashboard/Dashboard'
-// import Chat from './pages/chat/Chat'
+import { useAuthStore } from './store/authStore'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -19,12 +15,18 @@ function App() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold mb-4">Login Page</h1>
-                <p className="text-gray-600">To be implemented</p>
-              </div>
-            </div>
+            <Login />
+          )
+        }
+      />
+      
+      <Route
+        path="/register"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Register />
           )
         }
       />
