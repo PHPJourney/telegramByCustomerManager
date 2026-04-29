@@ -20,7 +20,7 @@
     "test:client": "cd client && npm test",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
-    "prepare": "husky install",
+    "prepare": "husky || true",
     "db:migrate": "cd server && npx prisma migrate dev",
     "db:studio": "cd server && npx prisma studio",
     "db:seed": "cd server && npm run seed"
