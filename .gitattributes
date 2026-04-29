@@ -1,0 +1,33 @@
+# 自动检测文本文件的行尾符
+* text=auto
+
+# 确保某些文件始终使用 LF
+*.sh eol=lf
+*.bash eol=lf
+
+# 确保 Windows 脚本使用 CRLF
+*.bat eol=crlf
+*.cmd eol=crlf
+
+# 二进制文件 - 不进行行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# 数据库文件
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+
+# 压缩文件
+*.zip binary
+*.tar.gz binary
+*.gz binary
