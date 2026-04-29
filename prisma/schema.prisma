@@ -1,0 +1,395 @@
+// Prisma Schema for Telegram Customer Service System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 用户表 - 系统用户（客服和管理员）
+// ==========================================
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  password      String
+  role          UserRole  @default(AGENT)
+  firstName     String?
+  lastName      String?
+  avatar        String?
+  phone         String?
+  isActive      Boolean   @default(true)
+  isOnline      Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关系
+  agentProfile      Agent?
+  conversations     Conversation[]  @relation("AgentConversations")
+  sentMessages      Message[]       @relation("SentMessages")
+  languagePreference LanguagePreference?
+  wallets           Wallet[]
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+// ==========================================
+// 客服代理表 - 客服详细信息
+// ==========================================
+model Agent {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  maxConcurrentChats Int   @default(10)
+  currentChatCount   Int   @default(0)
+  totalChatsHandled  Int   @default(0)
+  averageResponseTime Float?  // 平均响应时间（秒）
+  rating             Float?   // 评分
+  specialties        String[] // 擅长领域
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments Assignment[]
+
+  @@index([userId])
+  @@map("agents")
+}
+
+// ==========================================
+// 客户表 - Telegram 用户信息
+// ==========================================
+model Customer {
+  id            String   @id @default(uuid())
+  telegramId    BigInt   @unique
+  username      String?
+  firstName     String?
+  lastName      String?
+  phoneNumber   String?
+  languageCode  String?  // Telegram 语言代码
+  isPremium     Boolean  @default(false)
+  photoUrl      String?
+  
+  // 统计信息
+  totalMessages Int      @default(0)
+  lastMessageAt DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversations Conversation[]
+  messages      Message[]
+  wallets       Wallet[]
+
+  @@index([telegramId])
+  @@map("customers")
+}
+
+// ==========================================
+// 会话表
+// ==========================================
+model Conversation {
+  id            String             @id @default(uuid())
+  customerId    String
+  customer      Customer           @relation(fields: [customerId], references: [id])
+  
+  agentId       String?
+  agent         User?              @relation("AgentConversations", fields: [agentId], references: [id])
+  
+  status        ConversationStatus @default(ACTIVE)
+  priority      Priority           @default(NORMAL)
+  
+  telegramChatId BigInt?
+  source        MessageSource      @default(TELEGRAM_BOT)
+  
+  openedAt      DateTime           @default(now())
+  closedAt      DateTime?
+  lastMessageAt DateTime?
+  
+  tags          String[]
+  notes         String?
+  
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  messages      Message[]
+  assignments   Assignment[]
+
+  @@index([customerId])
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("conversations")
+}
+
+enum ConversationStatus {
+  ACTIVE
+  PENDING
+  CLOSED
+  ARCHIVED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum MessageSource {
+  TELEGRAM_BOT
+  TELEGRAM_CLIENT
+  WEB_CHAT
+}
+
+// ==========================================
+// 消息表
+// ==========================================
+model Message {
+  id              String        @id @default(uuid())
+  conversationId  String
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id])
+  
+  senderId        String?
+  sender          User?         @relation("SentMessages", fields: [senderId], references: [id])
+  
+  messageType     MessageType   @default(TEXT)
+  content         String
+  mediaUrl        String?
+  mediaType       String?
+  
+  telegramMessageId BigInt?
+  replyToMessageId String?
+  
+  isRead          Boolean       @default(false)
+  readAt          DateTime?
+  
+  // AI 辅助
+  aiSuggestions   Json?         // AI 建议的回复
+  sentiment       String?       // 情感分析结果
+  translatedContent String?     // 翻译后的内容
+  language        String?       // 消息语言
+  
+  metadata        Json?         // 额外元数据
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([conversationId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([telegramMessageId])
+  @@map("messages")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  STICKER
+  LOCATION
+  CONTACT
+}
+
+// ==========================================
+// 消息分发表
+// ==========================================
+model Assignment {
+  id              String         @id @default(uuid())
+  conversationId  String
+  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  agentId         String
+  agent           Agent          @relation(fields: [agentId], references: [id])
+  
+  status          AssignmentStatus @default(PENDING)
+  assignedAt      DateTime       @default(now())
+  acceptedAt      DateTime?
+  completedAt     DateTime?
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([conversationId, agentId])
+  @@index([agentId])
+  @@index([status])
+  @@map("assignments")
+}
+
+enum AssignmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  TRANSFERRED
+}
+
+// ==========================================
+// Telegram Bot 配置表
+// ==========================================
+model TelegramBot {
+  id            String   @id @default(uuid())
+  botToken      String   @unique
+  botUsername   String   @unique
+  botName       String
+  
+  webhookUrl    String?
+  webhookSecret String?
+  
+  isActive      Boolean  @default(true)
+  autoAssign    Boolean  @default(true)
+  
+  commands      Json?    // 机器人命令配置
+  settings      Json?    // 其他设置
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([botUsername])
+  @@map("telegram_bots")
+}
+
+// ==========================================
+// Telegram 账号绑定表
+// ==========================================
+model TelegramAccount {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  telegramId    BigInt   @unique
+  phoneNumber   String
+  username      String?
+  firstName     String?
+  lastName      String?
+  
+  sessionData   String?  // MTProto session 数据（加密存储）
+  isConnected   Boolean  @default(false)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([telegramId])
+  @@map("telegram_accounts")
+}
+
+// ==========================================
+// Web3 钱包表
+// ==========================================
+model Wallet {
+  id            String     @id @default(uuid())
+  userId        String?
+  user          User?      @relation(fields: [userId], references: [id])
+  
+  customerId    String?
+  customer      Customer?  @relation(fields: [customerId], references: [id])
+  
+  address       String     // 钱包地址
+  chainId       Int        // 链 ID
+  chainName     String     // 链名称
+  
+  signature     String     // 签名验证
+  signedAt      DateTime   // 签名时间
+  
+  isActive      Boolean    @default(true)
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([address, chainId])
+  @@index([userId])
+  @@index([customerId])
+  @@map("wallets")
+}
+
+// ==========================================
+// 语言偏好表
+// ==========================================
+model LanguagePreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  language  String   @default("zh-CN")  // zh-CN, en-US, ja-JP, etc.
+  timezone  String   @default("Asia/Shanghai")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("language_preferences")
+}
+
+// ==========================================
+// 快捷回复模板表
+// ==========================================
+model QuickReply {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  category    String?
+  language    String   @default("zh-CN")
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  
+  isGlobal    Boolean  @default(false)  // 是否全局可用
+  usageCount  Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@map("quick_replies")
+}
+
+// ==========================================
+// 系统日志表
+// ==========================================
+model SystemLog {
+  id        String     @id @default(uuid())
+  level     LogLevel   @default(INFO)
+  message   String
+  context   Json?
+  
+  userId    String?
+  action    String?
+  
+  ipAddress String?
+  userAgent String?
+  
+  createdAt DateTime   @default(now())
+
+  @@index([level])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("system_logs")
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}

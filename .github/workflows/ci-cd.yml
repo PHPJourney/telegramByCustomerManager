@@ -1,0 +1,134 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # 后端测试
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: telegram_cs_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Generate Prisma Client
+        working-directory: ./server
+        run: npx prisma generate
+      
+      - name: Run database migrations
+        working-directory: ./server
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/telegram_cs_test?schema=public
+        run: npx prisma migrate deploy
+      
+      - name: Run tests
+        working-directory: ./server
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/telegram_cs_test?schema=public
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret
+          NODE_ENV: test
+        run: npm test
+      
+      - name: Build
+        working-directory: ./server
+        run: npm run build
+
+  # 前端测试和构建
+  frontend-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci
+      
+      - name: Run linter
+        working-directory: ./client
+        run: npm run lint
+      
+      - name: Build
+        working-directory: ./client
+        run: npm run build
+
+  # Docker 构建和推送（仅在 main 分支）
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-build]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push backend
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./server/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/telegram-cs-server:latest
+      
+      - name: Build and push frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./client/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/telegram-cs-client:latest
