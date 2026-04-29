@@ -8,8 +8,8 @@ import { logger } from './utils/logger'
 import { errorHandler } from './middleware/error'
 import { prisma } from './config/database'
 
-// Routes (will be created later)
-// import authRoutes from './routes/auth'
+// Routes
+import authRoutes from './routes/auth.routes'
 // import telegramRoutes from './routes/telegram'
 
 const app = express()
@@ -50,8 +50,8 @@ app.get('/health', (req, res) => {
 })
 
 // API Routes
-app.use('/api/auth', undefined as any) // Will be replaced with actual routes
-app.use('/api/telegram', undefined as any)
+app.use('/api/auth', authRoutes)
+// app.use('/api/telegram', telegramRoutes)
 app.use('/api/conversations', undefined as any)
 app.use('/api/messages', undefined as any)
 app.use('/api/agents', undefined as any)
