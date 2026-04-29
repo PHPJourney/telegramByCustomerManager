@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
-import Login from './pages/Login'
+import TelegramLogin from './pages/TelegramLogin'
 import Dashboard from './pages/Dashboard'
 
 function App() {
@@ -15,7 +15,7 @@ function App() {
           isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <Login />
+            <TelegramLogin />
           )
         }
       />

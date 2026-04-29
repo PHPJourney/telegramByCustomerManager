@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import * as authController from '../controllers/auth.controller'
 import * as telegramAuthController from '../controllers/telegram-auth.controller'
+import * as telegramLoginController from '../controllers/telegram-login.controller'
 import { authenticate } from '../middleware/auth'
 
 const router = Router()
@@ -10,6 +11,11 @@ router.post('/register', authController.register)
 router.post('/login', authController.login)
 router.post('/refresh', authController.refresh)
 router.post('/telegram/login', telegramAuthController.telegramLogin)
+
+// Telegram MTProto 登录路由
+router.get('/telegram/config', telegramLoginController.getTelegramConfig)
+router.post('/telegram/send-code', telegramLoginController.sendVerificationCode)
+router.post('/telegram/sign-in', telegramLoginController.signInWithCode)
 
 // 保护路由（需要认证）
 router.get('/me', authenticate, authController.me)
