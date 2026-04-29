@@ -1,6 +1,22 @@
 # Telegram Customer Service System
 
+<div align="center">
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Node](https://img.shields.io/badge/node-%3E%3D18.0-brightgreen)
+![React](https://img.shields.io/badge/react-18.2-blue)
+![TypeScript](https://img.shields.io/badge/typescript-5.3-blue)
+![PostgreSQL](https://img.shields.io/badge/postgresql-15-blue)
+![Docker](https://img.shields.io/badge/docker-supported-blue)
+
 一个基于 React + Node.js 的电报客服系统，支持多客服分发、Web3 钱包集成、AI 消息辅助和多语言切换。
+
+[快速开始](./QUICKSTART.md) • [安装指南](./INSTALL.md) • [架构文档](./ARCHITECTURE.md) • [项目进度](./PROJECT_STATUS.md)
+
+</div>
+
+---
 
 ## 功能特性
 
