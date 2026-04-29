@@ -87,13 +87,6 @@ export class NativeService {
   }
 
   /**
-   * 打开系统设置
-   */
-  static async openSettings() {
-    await App.openSettings()
-  }
-
-  /**
    * 获取应用信息
    */
   static async getAppInfo() {

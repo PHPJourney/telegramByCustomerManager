@@ -58,14 +58,12 @@ jobs:
         run: npm install
       
       - name: Generate Prisma Client
-        working-directory: ./server
-        run: npx prisma generate --schema=prisma/schema.prisma
+        run: npx prisma generate --schema=./prisma/schema.prisma
       
       - name: Run database migrations
-        working-directory: ./server
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/telegram_cs_test?schema=public
-        run: npx prisma migrate deploy --schema=prisma/schema.prisma
+        run: npx prisma migrate deploy --schema=./prisma/schema.prisma
       
       - name: Run tests
         working-directory: ./server
