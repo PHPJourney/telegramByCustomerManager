@@ -3,16 +3,22 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
+import { createServer } from 'http'
 import { config } from './config'
 import { logger } from './utils/logger'
 import { errorHandler } from './middleware/error'
 import { prisma } from './config/database'
+import { WebSocketService } from './services/websocket.service'
 
 // Routes
 import authRoutes from './routes/auth.routes'
 // import telegramRoutes from './routes/telegram'
 
 const app = express()
+const httpServer = createServer(app)
+
+// Initialize WebSocket
+const wsService = new WebSocketService(httpServer)
 
 // Security middleware
 app.use(helmet())
@@ -67,9 +73,11 @@ app.use(errorHandler)
 
 // Start server
 const PORT = config.port
-app.listen(PORT, async () => {
+// Start server with HTTP and WebSocket
+httpServer.listen(PORT, async () => {
   logger.info(`🚀 Server running on port ${PORT}`)
   logger.info(`📝 Environment: ${config.nodeEnv}`)
+  logger.info(`🔌 WebSocket enabled at ws://localhost:${PORT}/ws`)
   
   // Test database connection
   try {
@@ -84,13 +92,19 @@ app.listen(PORT, async () => {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received. Shutting down gracefully...')
   await prisma.$disconnect()
-  process.exit(0)
+  httpServer.close(() => {
+    logger.info('HTTP server closed')
+    process.exit(0)
+  })
 })
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received. Shutting down gracefully...')
   await prisma.$disconnect()
-  process.exit(0)
+  httpServer.close(() => {
+    logger.info('HTTP server closed')
+    process.exit(0)
+  })
 })
 
 export default app

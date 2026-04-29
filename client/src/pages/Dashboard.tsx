@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
+import { useWebSocket } from '../hooks/useWebSocket'
 
 // Mock data - will be replaced with real API calls
 const mockConversations = [
@@ -36,6 +37,22 @@ export default function Dashboard() {
   const { user, logout } = useAuthStore()
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'active' | 'waiting' | 'resolved'>('all')
+  const [messageInput, setMessageInput] = useState('')
+  
+  // WebSocket connection
+  const { isConnected, sendChatMessage, updateStatus } = useWebSocket({
+    onConnected: () => {
+      console.log('✅ WebSocket connected')
+      updateStatus('online')
+    },
+    onDisconnected: () => {
+      console.log('❌ WebSocket disconnected')
+    },
+    onMessage: (data) => {
+      console.log('📨 Received message:', data)
+      // Handle real-time messages here
+    },
+  })
 
   const filteredConversations = mockConversations.filter(conv => 
     filter === 'all' ? true : conv.status === filter
@@ -60,9 +77,17 @@ export default function Dashboard() {
 
           <div className="flex items-center space-x-4">
             {/* Status Indicator */}
-            <div className="flex items-center space-x-2 px-3 py-1.5 bg-green-50 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-green-700 font-medium">在线</span>
+            <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full ${
+              isConnected ? 'bg-green-50' : 'bg-gray-100'
+            }`}>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${
+                isConnected ? 'bg-green-500' : 'bg-gray-400'
+              }`}></div>
+              <span className={`text-sm font-medium ${
+                isConnected ? 'text-green-700' : 'text-gray-600'
+              }`}>
+                {isConnected ? '在线' : '连接中...'}
+              </span>
             </div>
 
             {/* User Menu */}
@@ -249,10 +274,27 @@ export default function Dashboard() {
                   </button>
                   <input
                     type="text"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && messageInput.trim() && selectedConversation) {
+                        sendChatMessage(selectedConversation, messageInput)
+                        setMessageInput('')
+                      }
+                    }}
                     placeholder="输入消息..."
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
-                  <button className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                  <button 
+                    onClick={() => {
+                      if (messageInput.trim() && selectedConversation) {
+                        sendChatMessage(selectedConversation, messageInput)
+                        setMessageInput('')
+                      }
+                    }}
+                    disabled={!messageInput.trim() || !isConnected}
+                    className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     发送
                   </button>
                 </div>
