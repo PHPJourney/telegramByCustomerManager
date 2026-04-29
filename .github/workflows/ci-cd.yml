@@ -55,7 +55,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./server
-        run: npm ci
+        run: npm install
       
       - name: Generate Prisma Client
         working-directory: ./server
@@ -103,7 +103,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./client
-        run: npm ci
+        run: npm install
       
       - name: Run linter
         working-directory: ./client
