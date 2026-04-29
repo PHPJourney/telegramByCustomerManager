@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import TelegramLoginButton from '../components/TelegramLoginButton'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -139,6 +140,23 @@ export default function Login() {
             </button>
           </div>
         </form>
+
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">或使用 Telegram 登录</span>
+          </div>
+        </div>
+
+        {/* Telegram Login Button */}
+        <TelegramLoginButton 
+          botUsername={import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'YourBotUsername'}
+          onAuthSuccess={() => console.log('Telegram login success')}
+          onAuthError={(error) => console.error('Telegram login error:', error)}
+        />
 
         {/* Register Link */}
         <div className="text-center">
