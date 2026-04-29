@@ -34,6 +34,8 @@ model User {
   sentMessages      Message[]       @relation("SentMessages")
   languagePreference LanguagePreference?
   wallets           Wallet[]
+  telegramAccounts  TelegramAccount[]
+  quickReplies      QuickReply[]
 
   @@index([email])
   @@index([username])
