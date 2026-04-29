@@ -14,18 +14,29 @@ const clientSessions = new Map<string, TelegramClientService>()
  */
 export const sendVerificationCode = async (req: Request, res: Response) => {
   try {
-    const { phoneNumber, apiId, apiHash } = req.body
+    const { phoneNumber } = req.body
 
-    if (!phoneNumber || !apiId || !apiHash) {
+    if (!phoneNumber) {
       return res.status(400).json({
         success: false,
-        message: '缺少必需参数',
+        message: '请输入手机号',
+      })
+    }
+
+    // 从环境变量获取 API 配置
+    const apiId = Number(process.env.TELEGRAM_API_ID)
+    const apiHash = process.env.TELEGRAM_API_HASH
+
+    if (!apiId || !apiHash) {
+      return res.status(500).json({
+        success: false,
+        message: '服务器配置错误',
       })
     }
 
     // 创建客户端实例
     const client = new TelegramClientService({
-      apiId: Number(apiId),
+      apiId,
       apiHash,
       phoneNumber,
     })
@@ -41,10 +52,9 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: '验证码已发送',
+      message: '验证码已发送到您的 Telegram',
       data: {
         sessionId,
-        phoneCodeHash: '', // telegram 库可能不返回这个
       },
     })
   } catch (error: any) {
@@ -219,30 +229,4 @@ export const signInWithCode = async (req: Request, res: Response) => {
   }
 }
 
-/**
- * 获取 API 配置信息
- * GET /api/auth/telegram/config
- */
-export const getTelegramConfig = async (req: Request, res: Response) => {
-  try {
-    res.json({
-      success: true,
-      data: {
-        apiId: process.env.TELEGRAM_API_ID || '',
-        apiHash: process.env.TELEGRAM_API_HASH || '',
-        instructions: [
-          '1. 访问 https://my.telegram.org/apps',
-          '2. 登录您的 Telegram 账号',
-          '3. 创建新应用获取 API ID 和 API Hash',
-          '4. 填写到下方表单中',
-        ],
-      },
-    })
-  } catch (error: any) {
-    logger.error('Get config error:', error)
-    res.status(500).json({
-      success: false,
-      message: error.message || '获取配置失败',
-    })
-  }
-}
+

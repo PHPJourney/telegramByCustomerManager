@@ -13,7 +13,6 @@ router.post('/refresh', authController.refresh)
 router.post('/telegram/login', telegramAuthController.telegramLogin)
 
 // Telegram MTProto 登录路由
-router.get('/telegram/config', telegramLoginController.getTelegramConfig)
 router.post('/telegram/send-code', telegramLoginController.sendVerificationCode)
 router.post('/telegram/sign-in', telegramLoginController.signInWithCode)
 

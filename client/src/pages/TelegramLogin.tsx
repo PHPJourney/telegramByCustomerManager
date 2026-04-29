@@ -1,20 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
-type LoginStep = 'config' | 'phone' | 'code' | 'password'
+type LoginStep = 'phone' | 'code' | 'password'
 
 export default function TelegramLogin() {
   const navigate = useNavigate()
   const { login } = useAuthStore()
   
-  const [step, setStep] = useState<LoginStep>('config')
+  const [step, setStep] = useState<LoginStep>('phone')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
-  // Config step
-  const [apiId, setApiId] = useState('')
-  const [apiHash, setApiHash] = useState('')
   
   // Phone step
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -26,36 +22,10 @@ export default function TelegramLogin() {
   // Password step (2FA)
   const [password, setPassword] = useState('')
 
-  // 获取配置
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/auth/telegram/config`
-        )
-        const data = await response.json()
-        
-        if (data.success && data.data.apiId) {
-          setApiId(data.data.apiId)
-          setApiHash(data.data.apiHash)
-        }
-      } catch (err) {
-        console.error('Failed to fetch config:', err)
-      }
-    }
-    
-    fetchConfig()
-  }, [])
-
   // 第一步：发送验证码
   const handleSendCode = async () => {
-    if (!apiId || !apiHash) {
-      setError('请填写 API ID 和 API Hash')
-      return
-    }
-
     if (!phoneNumber) {
-      setError('请填写手机号')
+      setError('请输入手机号')
       return
     }
 
@@ -68,11 +38,7 @@ export default function TelegramLogin() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phoneNumber,
-            apiId,
-            apiHash,
-          }),
+          body: JSON.stringify({ phoneNumber }),
         }
       )
 
@@ -217,58 +183,7 @@ export default function TelegramLogin() {
           </div>
         )}
 
-        {/* Step 1: API Config */}
-        {step === 'config' && (
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800 mb-2">
-                <strong>如何获取 API 凭证：</strong>
-              </p>
-              <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
-                <li>访问 <a href="https://my.telegram.org/apps" target="_blank" rel="noopener noreferrer" className="underline">my.telegram.org/apps</a></li>
-                <li>登录您的 Telegram 账号</li>
-                <li>创建新应用</li>
-                <li>复制 API ID 和 API Hash</li>
-              </ol>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                API ID
-              </label>
-              <input
-                type="text"
-                value={apiId}
-                onChange={(e) => setApiId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0088cc]"
-                placeholder="12345678"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                API Hash
-              </label>
-              <input
-                type="text"
-                value={apiHash}
-                onChange={(e) => setApiHash(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0088cc]"
-                placeholder="abcdef1234567890"
-              />
-            </div>
-
-            <button
-              onClick={() => setStep('phone')}
-              disabled={!apiId || !apiHash}
-              className="w-full py-3 bg-[#0088cc] text-white font-medium rounded-lg hover:bg-[#0077b3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              下一步
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: Phone Number */}
+        {/* Step 1: Phone Number */}
         {step === 'phone' && (
           <div className="space-y-4">
             <div>
@@ -289,15 +204,9 @@ export default function TelegramLogin() {
 
             <div className="flex space-x-3">
               <button
-                onClick={() => setStep('config')}
-                className="flex-1 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                返回
-              </button>
-              <button
                 onClick={handleSendCode}
                 disabled={loading || !phoneNumber}
-                className="flex-1 py-3 bg-[#0088cc] text-white font-medium rounded-lg hover:bg-[#0077b3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-[#0088cc] text-white font-medium rounded-lg hover:bg-[#0077b3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? '发送中...' : '发送验证码'}
               </button>
@@ -305,7 +214,7 @@ export default function TelegramLogin() {
           </div>
         )}
 
-        {/* Step 3: Verification Code */}
+        {/* Step 2: Verification Code */}
         {step === 'code' && (
           <div className="space-y-4">
             <div>
@@ -343,7 +252,7 @@ export default function TelegramLogin() {
           </div>
         )}
 
-        {/* Step 4: Password (2FA) */}
+        {/* Step 3: Password (2FA) */}
         {step === 'password' && (
           <div className="space-y-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
